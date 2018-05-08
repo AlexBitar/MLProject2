@@ -1,0 +1,261 @@
+#Begin by loading your training data using 'read.csv(FILE LOCATION)'
+train_from_csv<-read.csv('C:/Users/Alex/Desktop/Proj2/BlogFeedback/train.csv' , header=FALSE, nrow=5000)
+
+train<-as.data.frame(train_from_csv)
+
+
+##load train data x, y 
+lmFit1
+numbC =ncol(load_x)
+trans =preProcess(train[,-numbC],method=c('YeoJohnson','center','scale'))
+train <- predict(trans,train )
+##Next we need to load the columns we will be using from the data set (51-60)
+load_x<-train[,c(51,52,53,54,56,57,58,59)]
+load_y<-train[,c(281)]
+
+
+
+##create a lm function and get the mse
+
+lmFit1<-lm(load_y~(V51+ V52+ V53+ V54+ V56+ V57+ V58+ V59), data=load_x)
+summary(lmFit1)
+
+pred.lmFit1 = predict(lmFit1,train,se.fit=TRUE)
+
+mse.lmFit1 =sum((load_y-pred.lmFit1$fit)^2)/5000
+
+mse.lmFit1
+##[1] 0.5336556
+
+
+##Load Rmosek package + Matrix package
+require(Rmosek)
+
+
+##set data sets to matricies
+load_x=as.matrix(load_x)
+load_y=as.matrix(load_y)
+
+
+
+
+##define rmosek variables
+
+bModel1<- list()
+bModel1$sense<-"min"
+
+ncol(load_x)
+ncol(load_y)
+bModel1$c <- as.numeric(solve(t(load_x)%*%load_x) %*% (t(load_x)%*%load_y))
+bModel1$c
+
+bModel1$A <- Matrix(load_x,sparse= TRUE)
+
+#load caret Library
+library(caret)
+nrow(load_x)
+maxOfY<- max(load_y)
+
+blc<- rep(0,5000)
+buc<-rep(maxOfY,5000)
+
+bModel1$bc<- rbind(blc,buc)
+
+blx<- apply(load_x,2,min)
+bux<- apply(load_x,2,max)
+bModel1$bx <- rbind(blx,bux)
+bModel1$bx
+
+##Execute the following after Rmosek variables are inputed
+
+r <- mosek(bModel1)
+
+r$sol$itr$xx
+
+
+##Search for $xx to see the features 'w' value, then plug into the 
+
+w=c(r$sol$itr$xx)
+w=as.matrix(w)
+
+scaled.load_x=as.matrix(load_x)
+
+yhat1=scaled.load_x %*% w
+yhat1
+error1=(load_y-yhat1)^2
+error1
+mean(error1)
+
+## [1] 0.9998
+
+
+##load test data
+
+#test1
+test1_from_csv<-read.csv('C:/Users/Alex/Desktop/Proj2/BlogFeedback/test1.csv' , header=FALSE, nrow=115)
+
+test1<-as.data.frame(test1_from_csv)
+numbC1 =ncol(test1)
+trans1 =preProcess(test1[,-numbC1],method=c('YeoJohnson','center','scale'))
+test1 <- predict(trans1,test1)
+
+
+load_x1<-test1[,c(51,52,53,54,56,57,58,59)]
+load_y1<-test1[,c(281)]
+load_x1
+#===========
+
+##create a lm function and get the mse
+
+lmFitT1<-lm(load_y1~(V51+ V52+ V53+ V54+ V56+ V57+ V58+ V59), data=load_x1)
+summary(lmFitT1)
+
+pred.lmFitT1 = predict(lmFitT1,test1,se.fit=TRUE)
+
+mse.lmFitT1 =sum((load_y1-pred.lmFitT1$fit)^2)/115
+
+mse.lmFit1
+##[1] 0.5336556
+
+##set data sets to matricies
+load_x1=as.matrix(load_x1)
+load_y1=as.matrix(load_y1)
+
+
+
+
+##define rmosek variables
+
+bModelT1<- list()
+bModelT1$sense<-"min"
+
+ncol(load_x1)
+ncol(load_y1)
+bModelT1$c <- as.numeric(solve(t(load_x1)%*%load_x1) %*% (t(load_x1)%*%load_y1))
+bModelT1$c
+
+bModelT1$A <- Matrix(load_x1,sparse= TRUE)
+
+
+nrow(load_x1)
+maxOfY1<- max(load_y1)
+
+blc<- rep(0,115)
+buc<-rep(maxOfY1,115)
+
+bModelT1$bc<- rbind(blc,buc)
+
+blx<- apply(load_x1,2,min)
+bux<- apply(load_x1,2,max)
+bModelT1$bx <- rbind(blx,bux)
+bModelT1$bx 
+blx
+bux
+
+r1 <- mosek(bModelT1)
+
+
+r1$sol$itr$xx
+
+
+##Search for $xx to see the features 'w' value, then plug into the 
+
+w1=c(r1$sol$itr$xx)
+w1=as.matrix(w1)
+
+scaled.load_x1=as.matrix(load_x1)
+
+yhatT1=scaled.load_x1 %*% w1
+yhatT1
+errorT1=(load_y1-yhatT1)^2
+errorT1
+mean(errorT1)
+
+## [1] 1656.809
+##==============================================================================##
+##==============================================================================##
+
+#test2
+test2_from_csv<-read.csv('C:/Users/Alex/Desktop/Proj2/BlogFeedback/test2.csv' , header=FALSE, nrow=133)
+
+test2<-as.data.frame(test2_from_csv)
+
+numbC2 =ncol(test2)
+trans2 =preProcess(test1[,-numbC2],method=c('YeoJohnson','center','scale'))
+test2 <- predict(trans2,test2)
+
+
+load_x2<-test2[,c(51,52,53,54,56,57,58,59)]
+load_y2<-test2[,c(281)]
+load_x2
+#===========
+
+##create a lm function and get the mse
+
+lmFitT2<-lm(load_y2~(V51+ V52+ V53+ V54+ V56+ V57+ V58+ V59), data=load_x2)
+summary(lmFitT2)
+
+pred.lmFitT2 = predict(lmFitT2,test2,se.fit=TRUE)
+
+mse.lmFitT2 =sum((load_y2-pred.lmFitT2$fit)^2)/133
+
+mse.lmFitT2
+##[1] 184.9716
+
+##set data sets to matricies
+load_x2=as.matrix(load_x2)
+load_y2=as.matrix(load_y2)
+
+
+
+
+##define rmosek variables
+
+bModelT2<- list()
+bModelT2$sense<-"min"
+
+ncol(load_x2)
+ncol(load_y2)
+bModelT2$c <- as.numeric(solve(t(load_x2)%*%load_x2) %*% (t(load_x2)%*%load_y2))
+bModelT2$c
+
+bModelT2$A <- Matrix(load_x2,sparse= TRUE)
+
+
+nrow(load_x2)
+maxOfY2<- max(load_y2)
+
+blc<- rep(0,133)
+buc<-rep(maxOfY2,133)
+
+bModelT2$bc<- rbind(blc,buc)
+
+blx<- apply(load_x2,2,min)
+bux<- apply(load_x2,2,max)
+bModelT2$bx <- rbind(blx,bux)
+bModelT2$bx 
+blx
+bux
+
+r2 <- mosek(bModelT1)
+
+
+r2$sol$itr$xx
+
+
+##Search for $xx to see the features 'w' value, then plug into the 
+
+w2=c(r2$sol$itr$xx)
+w2=as.matrix(w2)
+
+scaled.load_x2=as.matrix(load_x2)
+
+yhatT2=scaled.load_x2 %*% w2
+yhatT2
+errorT2=(load_y2-yhatT2)^2
+errorT2
+mean(errorT2)
+
+
+###[1] 1007.782
+
